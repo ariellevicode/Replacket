@@ -1,0 +1,44 @@
+﻿<UserControl x:Class="ReplacketProject.Controls.PacketDisplayControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+   
+    <materialDesign:Card Margin="20" 
+                         UniformCornerRadius="8" 
+                         Padding="16"
+                         Background="{DynamicResource MaterialDesignPaper}">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            
+            <TextBlock Grid.Row="0"
+                       Text="packet info:" 
+                       FontSize="14" 
+                       FontWeight="SemiBold" 
+                       Margin="0,0,0,8" 
+                       Foreground="{DynamicResource MaterialDesignBody}"/>
+
+           
+            <TextBox Grid.Row="1"
+                     x:Name="PacketInfoTextBox"
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Disabled"
+                     FontFamily="Consolas" 
+                     FontSize="13"
+                     MinHeight="200"
+                     VerticalAlignment="Stretch"
+                     HorizontalAlignment="Stretch"
+                     Padding="12"/>
+        </Grid>
+
+    </materialDesign:Card>
+</UserControl>

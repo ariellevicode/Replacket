@@ -14,4 +14,8 @@
     <PackageReference Include="SharpPcap" Version="6.3.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+
 </Project>

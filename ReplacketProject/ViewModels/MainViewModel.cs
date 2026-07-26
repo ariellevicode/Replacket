@@ -76,7 +76,11 @@ namespace ReplacketProject.ViewModels
                 }
             }
         }
-
+        private void ClearDisplay()
+        {
+            _displayBuffer.Clear();
+            PacketDisplayInfo = string.Empty;
+        }
         private async Task ProcessPcapFileAsync()
         {
            
@@ -110,6 +114,7 @@ namespace ReplacketProject.ViewModels
 
                     while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
                     {
+                        ClearDisplay();
                         
                         // check if the user pressed the stop button
                         if (token.IsCancellationRequested)

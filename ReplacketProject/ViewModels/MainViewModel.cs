@@ -19,13 +19,14 @@ namespace ReplacketProject.ViewModels
         public string FilePath
         {
             get => _filePath;
-            set { 
-                _filePath = value; 
+            set
+            {
+                _filePath = value;
                 OnPropertyChanged();
                 ProgressValue = 0;
                 ProgressMaximum = 100;
+                _lastPacketPosition = 0;
             }
-
         }
 
         private string _packetDisplayInfo;
@@ -39,15 +40,26 @@ namespace ReplacketProject.ViewModels
         public double ProgressValue
         {
             get => _progressValue;
-            set { _progressValue = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressPercentage)); }
+            set
+            {
+                _progressValue = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ProgressPercentage));
+            }
         }
 
         private double _progressMaximum = 100;
         public double ProgressMaximum
         {
             get => _progressMaximum;
-            set { _progressMaximum = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressPercentage)); }
+            set
+            {
+                _progressMaximum = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ProgressPercentage));
+            }
         }
+
         public double ProgressPercentage
         {
             get
@@ -61,6 +73,7 @@ namespace ReplacketProject.ViewModels
 
         // execution is currently active
         private bool _isProcessing;
+        private int _lastPacketPosition = 0; // Tracks the last processed packet count across runs
         private CancellationTokenSource _cts;
 
         // commands
@@ -104,14 +117,15 @@ namespace ReplacketProject.ViewModels
                 }
             }
         }
+
         private void ClearDisplay()
         {
             _displayBuffer.Clear();
             PacketDisplayInfo = string.Empty;
         }
+
         private async Task ProcessPcapFileAsync()
         {
-           
             if (string.IsNullOrWhiteSpace(FilePath))
             {
                 PacketDisplayInfo = "Status: No file path provided.";
@@ -128,37 +142,53 @@ namespace ReplacketProject.ViewModels
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
 
-            _displayBuffer.Clear();
-            PacketDisplayInfo = "Starting capture...\n";
+            // only wipe the screen and recalculate total if starting from the beginning
+            if (_lastPacketPosition == 0)
+            {
+                _displayBuffer.Clear();
+                PacketDisplayInfo = "Calculating total packets...\n";
+                ProgressValue = 0;
+            }
 
             await Task.Run(() =>
             {
                 try
                 {
+                    // calculate max packets if starting from 0
+                    if (_lastPacketPosition == 0)
+                    {
+                        int totalPackets = GetPcapPacketCount();
+                        if (totalPackets == 0)
+                        {
+                            PacketDisplayInfo = "Status: File contains no packets.";
+                            return;
+                        }
+                        ProgressMaximum = totalPackets;
+                    }
+
                     using var device = new CaptureFileReaderDevice(FilePath);
                     device.Open();
-                    int totalPackets = GetPcapPacketCount();
-                    if (totalPackets == 0)
+
+                    // skip already processed packets
+                    int skippedCount = 0;
+                    while (skippedCount < _lastPacketPosition && device.GetNextPacket(out _) == GetPacketStatus.PacketRead)
                     {
-                        PacketDisplayInfo = "Status: File contains no packets.";
-                        return;
+                        skippedCount++;
                     }
-                    ProgressMaximum = totalPackets;
 
-                    
-
+                    // continue processing from where stopped
                     while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
                     {
-                        ClearDisplay();
-                        
-                        // check if the user pressed the stop button
+                        // check if the user pressed stop
                         if (token.IsCancellationRequested)
                         {
-                            _displayBuffer.AppendLine("\nProcessing stopped by user.");
+                            _displayBuffer.AppendLine($"\nProcessing stopped at packet {_lastPacketPosition}.");
                             break;
                         }
 
-                        ProgressValue++;
+                        _lastPacketPosition++;
+                        ProgressValue = _lastPacketPosition;
+
                         var rawPacket = capture.GetPacket();
                         var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
 
@@ -173,6 +203,7 @@ namespace ReplacketProject.ViewModels
                     if (!token.IsCancellationRequested)
                     {
                         _displayBuffer.AppendLine("\nFinished processing file.");
+                        _lastPacketPosition = 0; // reset position so pressing play restarts from packet 1
                     }
 
                     PacketDisplayInfo = _displayBuffer.ToString();
@@ -191,7 +222,6 @@ namespace ReplacketProject.ViewModels
 
         private void StopProcessing()
         {
-            // signal the cancellation token to stop the processing loop
             _cts?.Cancel();
         }
 
@@ -201,11 +231,7 @@ namespace ReplacketProject.ViewModels
             if (payloadBytes != null && payloadBytes.Length > 0)
             {
                 string rawHexPayload = BitConverter.ToString(payloadBytes);
-
-                // append the hex string directly to the display buffer
                 _displayBuffer.AppendLine(rawHexPayload);
-
-                // update the bound property for the UI
                 PacketDisplayInfo = _displayBuffer.ToString();
             }
         }
@@ -216,8 +242,6 @@ namespace ReplacketProject.ViewModels
             device.Open();
 
             int count = 0;
-
-            
             while (device.GetNextPacket(out _) == GetPacketStatus.PacketRead)
             {
                 count++;

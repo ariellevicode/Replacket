@@ -19,7 +19,13 @@ namespace ReplacketProject.ViewModels
         public string FilePath
         {
             get => _filePath;
-            set { _filePath = value; OnPropertyChanged(); }
+            set { 
+                _filePath = value; 
+                OnPropertyChanged();
+                ProgressValue = 0;
+                ProgressMaximum = 100;
+            }
+
         }
 
         private string _packetDisplayInfo;
@@ -27,6 +33,20 @@ namespace ReplacketProject.ViewModels
         {
             get => _packetDisplayInfo;
             set { _packetDisplayInfo = value; OnPropertyChanged(); }
+        }
+
+        private double _progressValue;
+        public double ProgressValue
+        {
+            get => _progressValue;
+            set { _progressValue = value; OnPropertyChanged(); }
+        }
+
+        private double _progressMaximum = 100;
+        public double ProgressMaximum
+        {
+            get => _progressMaximum;
+            set { _progressMaximum = value; OnPropertyChanged(); }
         }
 
         private readonly StringBuilder _displayBuffer;

@@ -1,0 +1,91 @@
+﻿<UserControl x:Class="ReplacketProject.Controls.TimeControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    
+    <materialDesign:Card Margin="20" 
+                         MaxWidth="400" 
+                         UniformCornerRadius="8" 
+                         Padding="16"
+                         Background="{DynamicResource MaterialDesignPaper}">
+
+        <StackPanel>
+            
+            <TextBlock Text="time (in seconds):" 
+                       FontSize="14" 
+                       FontWeight="SemiBold" 
+                       Margin="0,0,0,8" 
+                       Foreground="{DynamicResource MaterialDesignBody}"/>
+
+            
+            <Border BorderBrush="{DynamicResource MaterialDesignDivider}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Height="44" 
+                    Background="{DynamicResource MaterialDesignTextFieldBoxBackground}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    
+                    <TextBox x:Name="NumberTextBox"
+                             Grid.Column="0"
+                             Text="0"
+                             FontSize="14"
+                             Padding="12,0"
+                             VerticalContentAlignment="Center"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             PreviewTextInput="NumberTextBox_PreviewTextInput"
+                             DataObject.Pasting="NumberTextBox_Pasting"/>
+
+                   
+                    <Border Grid.Column="1" 
+                            BorderBrush="{DynamicResource MaterialDesignDivider}" 
+                            BorderThickness="1,0,0,0">
+                        <Grid Width="32">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*"/>
+                                <RowDefinition Height="1*"/>
+                            </Grid.RowDefinitions>
+
+                            
+                            <Button Grid.Row="0"
+                                    
+                                    Style="{StaticResource MaterialDesignToolButton}"
+                                    Padding="0"
+                                    Margin="0"
+                                    Height="21"
+                                    Width="31"
+                                    Cursor="Hand">
+                                <materialDesign:PackIcon Kind="Plus" Width="12" Height="12"/>
+                            </Button>
+
+                            
+                            <Separator Grid.Row="0" 
+                                       VerticalAlignment="Bottom" 
+                                       Margin="0" 
+                                       Background="{DynamicResource MaterialDesignDivider}"/>
+
+                            
+                            <Button Grid.Row="1"
+                                    
+                                    Style="{StaticResource MaterialDesignToolButton}"
+                                    Padding="0"
+                                    Margin="0"
+                                    Height="21"
+                                    Width="31"
+                                    Cursor="Hand">
+                                <materialDesign:PackIcon Kind="Minus" Width="12" Height="12"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </StackPanel>
+
+    </materialDesign:Card>
+</UserControl>

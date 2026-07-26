@@ -27,6 +27,7 @@
             <TextBox Grid.Row="1"
                      x:Name="PacketInfoTextBox"
                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                     Text="{Binding PacketDisplayInfo}"
                      IsReadOnly="True"
                      AcceptsReturn="True"
                      TextWrapping="Wrap"

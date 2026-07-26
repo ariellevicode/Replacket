@@ -39,14 +39,22 @@ namespace ReplacketProject.ViewModels
         public double ProgressValue
         {
             get => _progressValue;
-            set { _progressValue = value; OnPropertyChanged(); }
+            set { _progressValue = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressPercentage)); }
         }
 
         private double _progressMaximum = 100;
         public double ProgressMaximum
         {
             get => _progressMaximum;
-            set { _progressMaximum = value; OnPropertyChanged(); }
+            set { _progressMaximum = value; OnPropertyChanged(); OnPropertyChanged(nameof(ProgressPercentage)); }
+        }
+        public double ProgressPercentage
+        {
+            get
+            {
+                if (ProgressMaximum <= 0) return 0;
+                return Math.Min(100, Math.Round((ProgressValue / ProgressMaximum) * 100));
+            }
         }
 
         private readonly StringBuilder _displayBuffer;

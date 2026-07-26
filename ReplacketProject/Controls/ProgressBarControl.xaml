@@ -17,7 +17,7 @@
                        FontWeight="SemiBold" 
                        Foreground="{DynamicResource MaterialDesignBody}"/>
 
-            <TextBlock Text="{Binding ElementName=MainProgressBar, Path=Value, StringFormat={}{0:0}%}" 
+            <TextBlock Text="{Binding ProgressPercentage, StringFormat={}{0:0}%}" 
                        HorizontalAlignment="Right" 
                        FontSize="13" 
                        FontWeight="Bold" 

@@ -3,7 +3,9 @@ using PacketDotNet;
 using SharpPcap;
 using SharpPcap.LibPcap;
 using System;
+using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -12,7 +14,6 @@ namespace ReplacketProject.ViewModels
 {
     public class MainViewModel : BaseViewModel
     {
-        
         // bound properties
         private string _filePath;
         public string FilePath
@@ -30,6 +31,9 @@ namespace ReplacketProject.ViewModels
 
         private readonly StringBuilder _displayBuffer;
 
+        // execution is currently active
+        private bool _isProcessing;
+        private CancellationTokenSource _cts;
 
         // commands
         public ICommand StartCommand { get; }
@@ -41,8 +45,9 @@ namespace ReplacketProject.ViewModels
         {
             _displayBuffer = new StringBuilder();
 
-            // bind StartCommand to the async processing method
-            StartCommand = new RelayCommand(async () => await ProcessPcapFileAsync());
+            // bind Commands
+            StartCommand = new RelayCommand(async () => await ProcessPcapFileAsync(), () => !_isProcessing);
+            StopCommand = new RelayCommand(StopProcessing, () => _isProcessing);
             BrowseFileCommand = new RelayCommand(BrowseFile);
             FileDroppedCommand = new RelayCommand(OnFileDropped);
         }
@@ -58,7 +63,6 @@ namespace ReplacketProject.ViewModels
             {
                 FilePath = openFileDialog.FileName;
             }
-
         }
 
         private void OnFileDropped(object parameter)
@@ -75,16 +79,26 @@ namespace ReplacketProject.ViewModels
 
         private async Task ProcessPcapFileAsync()
         {
+           
             if (string.IsNullOrWhiteSpace(FilePath))
             {
                 PacketDisplayInfo = "Status: No file path provided.";
                 return;
             }
 
+            if (!File.Exists(FilePath))
+            {
+                PacketDisplayInfo = "Status: File path does not exist.";
+                return;
+            }
+
+            _isProcessing = true;
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
+
             _displayBuffer.Clear();
             PacketDisplayInfo = "Starting capture...\n";
 
-            // process on background thread
             await Task.Run(() =>
             {
                 try
@@ -96,21 +110,31 @@ namespace ReplacketProject.ViewModels
 
                     while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
                     {
+                        
+                        // check if the user pressed the stop button
+                        if (token.IsCancellationRequested)
+                        {
+                            _displayBuffer.AppendLine("\nProcessing stopped by user.");
+                            break;
+                        }
+
                         packetCount++;
                         var rawPacket = capture.GetPacket();
                         var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
 
-                        
                         FormatAndDisplayPacket(parsedPacket, packetCount);
 
-                        // pass to network sending function
-                        // SendPacket(rawPacket);
-                        // WIP
+                        // wip pass to network sending function
+                        // SendPacket(rawPacket); 
 
-                        Task.Delay(5).Wait();
+                        Task.Delay(5000).Wait();
                     }
 
-                    _displayBuffer.AppendLine("\nFinished processing file.");
+                    if (!token.IsCancellationRequested)
+                    {
+                        _displayBuffer.AppendLine("\nFinished processing file.");
+                    }
+
                     PacketDisplayInfo = _displayBuffer.ToString();
                 }
                 catch (Exception ex)
@@ -118,16 +142,32 @@ namespace ReplacketProject.ViewModels
                     _displayBuffer.AppendLine($"\nError: {ex.Message}");
                     PacketDisplayInfo = _displayBuffer.ToString();
                 }
+                finally
+                {
+                    _isProcessing = false;
+                }
             });
+        }
+
+        private void StopProcessing()
+        {
+            // signal the cancellation token to stop the processing loop
+            _cts?.Cancel();
         }
 
         private void FormatAndDisplayPacket(Packet parsedPacket, int packetCount)
         {
-            string packetSummary = $"[{packetCount}] {parsedPacket}\n" + new string('-', 50) + "\n";
-            _displayBuffer.AppendLine(packetSummary);
+            byte[] payloadBytes = parsedPacket.PayloadData ?? parsedPacket.Bytes;
+            if (payloadBytes != null && payloadBytes.Length > 0)
+            {
+                 string rawHexPayload = BitConverter.ToString(payloadBytes);
 
-            // property update automatically dispatches safely to UI thread via BaseViewModel
-            PacketDisplayInfo = _displayBuffer.ToString();
+                // append the hex string directly to the display buffer
+                _displayBuffer.AppendLine(rawHexPayload);
+
+                // update the bound property for the UI
+                PacketDisplayInfo = _displayBuffer.ToString();
+            }
         }
     }
 }

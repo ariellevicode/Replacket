@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ReplacketProject.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,14 @@ namespace ReplacketProject.Controls
         public FileUploadControl()
         {
             InitializeComponent();
+        }
+        private void DropZone_Drop(object sender, DragEventArgs e)
+        {
+            // Forward the drag event args to the ViewModel's command if DataContext is set
+            if (DataContext is MainViewModel vm)
+            {
+                vm.FileDroppedCommand.Execute(e);
+            }
         }
     }
 }

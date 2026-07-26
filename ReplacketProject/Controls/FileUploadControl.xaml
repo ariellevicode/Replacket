@@ -14,11 +14,10 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="14"/>
-                
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            
+            <!-- File Path Input & Browse Button -->
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -27,6 +26,7 @@
 
                 <TextBox x:Name="FilePathTextBox" 
                          Grid.Column="0"
+                         Text="{Binding FilePath, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                          materialDesign:HintAssist.Hint="File Path"
                          materialDesign:HintAssist.HelperText="Select or paste full path"
@@ -36,6 +36,7 @@
                          VerticalAlignment="Center"/>
 
                 <Button Grid.Column="1"
+                        Command="{Binding BrowseFileCommand}"
                         Style="{StaticResource MaterialDesignOutlinedButton}"
                         Margin="6,0,0,0"
                         Height="36"
@@ -47,10 +48,11 @@
                 </Button>
             </Grid>
 
-            
+            <!-- Drag and Drop Zone -->
             <Border Grid.Row="2"
                     x:Name="DropZone"
                     AllowDrop="True"
+                    Drop="DropZone_Drop"
                     Background="{DynamicResource MaterialDesignBackground}"
                     BorderBrush="{DynamicResource MaterialDesignDivider}"
                     BorderThickness="2"
@@ -60,7 +62,8 @@
                     Cursor="Hand">
 
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Button Style="{StaticResource MaterialDesignFloatingActionButton}"
+                    <Button Command="{Binding BrowseFileCommand}"
+                            Style="{StaticResource MaterialDesignFloatingActionButton}"
                             Width="36" 
                             Height="36"
                             ToolTip="Click or drag files here"

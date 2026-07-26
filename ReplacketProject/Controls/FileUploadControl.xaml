@@ -4,20 +4,17 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:local="clr-namespace:ReplacketProject.Controls"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             mc:Ignorable="d">
 
-    
-    <materialDesign:Card Margin="20" 
-                         MaxWidth="550" 
-                         UniformCornerRadius="12" 
-                         Padding="24"
+    <materialDesign:Card Margin="0,0,0,6" 
+                         UniformCornerRadius="8" 
+                         Padding="10"
                          Background="{DynamicResource MaterialDesignPaper}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="20"/>
+                <RowDefinition Height="14"/>
+                
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
@@ -28,33 +25,24 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-               
                 <TextBox x:Name="FilePathTextBox" 
                          Grid.Column="0"
                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                          materialDesign:HintAssist.Hint="File Path"
-                         materialDesign:HintAssist.HelperText="Select or paste a full path"
+                         materialDesign:HintAssist.HelperText="Select or paste full path"
                          materialDesign:TextFieldAssist.HasClearButton="True"
-                         FontSize="14"
-                         Padding="12,10"
+                         FontSize="12"
+                         Padding="8,6"
                          VerticalAlignment="Center"/>
 
-                
                 <Button Grid.Column="1"
-                        Click="Browse_Click"
                         Style="{StaticResource MaterialDesignOutlinedButton}"
-                        Margin="10,0,0,0"
-                        Height="44"
+                        Margin="6,0,0,0"
+                        Height="36"
                         ToolTip="Browse Files">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="FolderOpen" 
-                                                 Width="20" 
-                                                 Height="20" 
-                                                 VerticalAlignment="Center"/>
-                        <TextBlock Text="Browse" 
-                                   Margin="8,0,0,0" 
-                                   VerticalAlignment="Center" 
-                                   FontWeight="Medium"/>
+                        <materialDesign:PackIcon Kind="FolderOpen" Width="16" Height="16" VerticalAlignment="Center"/>
+                        <TextBlock Text="Browse" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="12" FontWeight="Medium"/>
                     </StackPanel>
                 </Button>
             </Grid>
@@ -63,50 +51,34 @@
             <Border Grid.Row="2"
                     x:Name="DropZone"
                     AllowDrop="True"
-                    DragOver="DropZone_DragOver"
-                    DragLeave="DropZone_DragLeave"
-                    Drop="DropZone_Drop"
                     Background="{DynamicResource MaterialDesignBackground}"
                     BorderBrush="{DynamicResource MaterialDesignDivider}"
                     BorderThickness="2"
-                    CornerRadius="8"
-                    Padding="30"
-                    MinHeight="180"
+                    CornerRadius="6"
+                    Padding="8"
+                    MinHeight="80"
                     Cursor="Hand">
 
-                
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="BorderThickness" Value="2"/>
-                    </Style>
-                </Border.Style>
-
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-
-                    
                     <Button Style="{StaticResource MaterialDesignFloatingActionButton}"
-                            Click="Browse_Click"
-                            Width="56" 
-                            Height="56"
+                            Width="36" 
+                            Height="36"
                             ToolTip="Click or drag files here"
-                            Margin="0,0,0,16">
-                        <materialDesign:PackIcon Kind="Plus" 
-                                                 Width="28" 
-                                                 Height="28"/>
+                            Margin="0,0,0,4">
+                        <materialDesign:PackIcon Kind="Plus" Width="18" Height="18"/>
                     </Button>
 
                     <TextBlock Text="Drag and drop files here" 
-                               FontSize="16" 
+                               FontSize="12" 
                                FontWeight="SemiBold"
                                HorizontalAlignment="Center" 
                                Foreground="{DynamicResource MaterialDesignBody}"/>
 
-                    <TextBlock Text="or click the button above to select" 
-                               FontSize="12" 
+                    <TextBlock Text="or click above to select" 
+                               FontSize="10" 
                                HorizontalAlignment="Center" 
-                               Margin="0,4,0,0"
+                               Margin="0,2,0,0"
                                Foreground="{DynamicResource MaterialDesignBodyLight}"/>
-
                 </StackPanel>
             </Border>
         </Grid>

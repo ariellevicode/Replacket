@@ -5,7 +5,7 @@
 
     <Button Command="{Binding StartCommand}" 
         Grid.Column="1" 
-        Margin="10,0,0,0" 
+        Margin="0,0,0,6" 
         Style="{StaticResource MaterialDesignFloatingActionMiniButton}" 
         Background="#059669" 
         BorderThickness="0" 

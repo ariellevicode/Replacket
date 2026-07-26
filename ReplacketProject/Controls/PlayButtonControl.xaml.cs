@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace ReplacketProject.Controls
 {
     /// <summary>
-    /// Interaction logic for StopButton.xaml
+    /// Interaction logic for PlayButton.xaml
     /// </summary>
-    public partial class StopButton : UserControl
+    public partial class PlayButtonControl : UserControl
     {
-        public StopButton()
+        public PlayButtonControl()
         {
             InitializeComponent();
         }

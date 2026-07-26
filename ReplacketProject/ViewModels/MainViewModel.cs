@@ -132,7 +132,7 @@ namespace ReplacketProject.ViewModels
                         // wip pass to network sending function
                         // SendPacket(rawPacket); 
 
-                        Task.Delay(5000).Wait();
+                        Task.Delay(1).Wait();
                     }
 
                     if (!token.IsCancellationRequested)
@@ -165,7 +165,7 @@ namespace ReplacketProject.ViewModels
             byte[] payloadBytes = parsedPacket.PayloadData ?? parsedPacket.Bytes;
             if (payloadBytes != null && payloadBytes.Length > 0)
             {
-                 string rawHexPayload = BitConverter.ToString(payloadBytes);
+                string rawHexPayload = BitConverter.ToString(payloadBytes);
 
                 // append the hex string directly to the display buffer
                 _displayBuffer.AppendLine(rawHexPayload);
@@ -173,6 +173,22 @@ namespace ReplacketProject.ViewModels
                 // update the bound property for the UI
                 PacketDisplayInfo = _displayBuffer.ToString();
             }
+        }
+        // placeholder method for getting the amount of packets in a pcap file.
+        public int GetPcapPacketCount()
+        {
+            using var device = new CaptureFileReaderDevice(FilePath);
+            device.Open();
+
+            int count = 0;
+
+            
+            while (device.GetNextPacket(out _) == GetPacketStatus.PacketRead)
+            {
+                count++;
+            }
+
+            return count;
         }
     }
 }

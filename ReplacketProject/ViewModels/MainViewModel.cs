@@ -129,8 +129,15 @@ namespace ReplacketProject.ViewModels
                 {
                     using var device = new CaptureFileReaderDevice(FilePath);
                     device.Open();
+                    int totalPackets = GetPcapPacketCount();
+                    if (totalPackets == 0)
+                    {
+                        PacketDisplayInfo = "Status: File contains no packets.";
+                        return;
+                    }
+                    ProgressMaximum = totalPackets;
 
-                    int packetCount = 0;
+                    
 
                     while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
                     {
@@ -143,11 +150,11 @@ namespace ReplacketProject.ViewModels
                             break;
                         }
 
-                        packetCount++;
+                        ProgressValue++;
                         var rawPacket = capture.GetPacket();
                         var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
 
-                        FormatAndDisplayPacket(parsedPacket, packetCount);
+                        FormatAndDisplayPacket(parsedPacket);
 
                         // wip pass to network sending function
                         // SendPacket(rawPacket); 
@@ -180,7 +187,7 @@ namespace ReplacketProject.ViewModels
             _cts?.Cancel();
         }
 
-        private void FormatAndDisplayPacket(Packet parsedPacket, int packetCount)
+        private void FormatAndDisplayPacket(Packet parsedPacket)
         {
             byte[] payloadBytes = parsedPacket.PayloadData ?? parsedPacket.Bytes;
             if (payloadBytes != null && payloadBytes.Length > 0)

@@ -28,8 +28,8 @@
         <ProgressBar x:Name="MainProgressBar"
                      Height="12"
                      Minimum="0" 
-                     Maximum="100" 
-                     Value="45" 
+                     Maximum="{Binding ProgressMaximum}" 
+                     Value= "{Binding ProgressValue}"
                      Foreground="#10B981" 
                      Background="#E5E7EB">
             <ProgressBar.Template>

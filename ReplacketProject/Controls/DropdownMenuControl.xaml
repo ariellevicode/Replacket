@@ -11,7 +11,10 @@
         <ComboBox Style="{StaticResource MaterialDesignOutlinedComboBox}"
                   materialDesign:HintAssist.Hint="Send To:"
                   FontSize="13"
-                  Padding="10,6">
+                  Padding="10,6"
+                  ItemsSource="{Binding NetworkDevices}"
+                  SelectedItem="{Binding SelectedDevice}"
+                  >
         </ComboBox>
 
     </materialDesign:Card>

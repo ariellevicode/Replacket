@@ -1,8 +1,10 @@
 ﻿using Microsoft.Win32;
 using PacketDotNet;
+using ReplacketProject.Models;
 using SharpPcap;
 using SharpPcap.LibPcap;
 using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -28,6 +30,19 @@ namespace ReplacketProject.ViewModels
                 ProgressMaximum = 100;
                 _lastPacketPosition = 0;
             }
+        }
+        private ObservableCollection<string> _networkDevices;
+        public ObservableCollection<string> NetworkDevices
+        {
+            get => _networkDevices;
+            set { _networkDevices = value; OnPropertyChanged(); }
+        }
+
+        private string _selectedDevice;
+        public string SelectedDevice
+        {
+            get => _selectedDevice;
+            set { _selectedDevice = value; OnPropertyChanged(); }
         }
 
         private string _packetDisplayInfo;
@@ -107,6 +122,12 @@ namespace ReplacketProject.ViewModels
             StopCommand = new RelayCommand(StopProcessing, () => _isProcessing);
             BrowseFileCommand = new RelayCommand(BrowseFile);
             FileDroppedCommand = new RelayCommand(OnFileDropped);
+
+            // temp DI violation
+            var deviceModel = new NetworkDeviceModel();
+            NetworkDevices = new ObservableCollection<string>(deviceModel.GetAvailableNetworkDevices());
+
+            
         }
 
         private void BrowseFile()

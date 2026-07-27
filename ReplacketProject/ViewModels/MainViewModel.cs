@@ -99,6 +99,30 @@ namespace ReplacketProject.ViewModels
                 return Math.Min(100, Math.Round((ProgressValue / ProgressMaximum) * 100));
             }
         }
+        private double _playbackSpeed = 1.0;
+        public double PlaybackSpeed
+        {
+            get => _playbackSpeed;
+            set
+            {
+                if (value > 0) 
+                {
+                    _playbackSpeed = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isFixedDelay = false;
+        public bool IsFixedDelay
+        {
+            get => _isFixedDelay;
+            set
+            {
+                _isFixedDelay = value;
+                OnPropertyChanged();
+            }
+        }
 
         private readonly StringBuilder _displayBuffer;
 
@@ -145,6 +169,10 @@ namespace ReplacketProject.ViewModels
                 {
                     DelayTime++;
                 }
+                else if (propName == "Speed")
+                {
+                    PlaybackSpeed = Math.Round(PlaybackSpeed + 0.25, 2);
+                }
             }
         }
 
@@ -159,6 +187,10 @@ namespace ReplacketProject.ViewModels
                 else if (propName == "Delay")
                 {
                     if (DelayTime > 0) DelayTime--;
+                }
+                else if (propName == "Speed")
+                {
+                    if (PlaybackSpeed > 0.25) PlaybackSpeed = Math.Round(PlaybackSpeed - 0.25, 2);
                 }
             }
         }

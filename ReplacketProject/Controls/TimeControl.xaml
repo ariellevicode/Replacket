@@ -9,12 +9,42 @@
                          Background="{DynamicResource MaterialDesignPaper}">
 
         <StackPanel>
-            <TextBlock Text="time (in milliseconds):" 
-                       FontSize="12" 
-                       FontWeight="SemiBold" 
-                       Margin="0,0,0,4" 
-                       Foreground="{DynamicResource MaterialDesignBody}"/>
+            
+            <Grid Margin="0,0,0,4">
+                <TextBlock Text="time (in milliseconds):" 
+               FontSize="12" 
+               FontWeight="SemiBold" 
+               VerticalAlignment="Center"
+               Foreground="{DynamicResource MaterialDesignBody}"/>
 
+                <StackPanel Orientation="Horizontal" 
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Center">
+
+                    <TextBlock Text="diff" 
+                   FontSize="11" 
+                   VerticalAlignment="Center" 
+                   Margin="0,0,4,0" 
+                   Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+
+                    
+                    <ToggleButton Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                      IsChecked="{Binding IsFixedDelay, Mode=TwoWay}"
+                      Cursor="Hand">
+                        <ToggleButton.LayoutTransform>
+                            <ScaleTransform ScaleX="0.7" ScaleY="0.7"/>
+                        </ToggleButton.LayoutTransform>
+                    </ToggleButton>
+
+                    <TextBlock Text="fixed" 
+                   FontSize="11" 
+                   VerticalAlignment="Center" 
+                   Margin="4,0,0,0" 
+                   Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                </StackPanel>
+            </Grid>
+
+           
             <Border BorderBrush="{DynamicResource MaterialDesignDivider}" 
                     BorderThickness="1" 
                     CornerRadius="4" 

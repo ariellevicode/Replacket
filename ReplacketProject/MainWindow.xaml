@@ -8,9 +8,7 @@
 
     <Grid Margin="10">
         <Grid.ColumnDefinitions>
-            
             <ColumnDefinition Width="*"/>
-            
             <ColumnDefinition Width="340"/>
         </Grid.ColumnDefinitions>
 
@@ -31,17 +29,18 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <controls:TimeControl Grid.Row="0"/>
-            <controls:RepeatControl Grid.Row="1"/>
-            <controls:DropdownMenuControl Grid.Row="2"/>
-            <controls:FileUploadControl Grid.Row="3"/>
+            <controls:SpeedControl Grid.Row="0"/>
+            <controls:TimeControl Grid.Row="1"/>
+            <controls:RepeatControl Grid.Row="2"/>
+            <controls:DropdownMenuControl Grid.Row="3"/>
+            <controls:FileUploadControl Grid.Row="4"/>
 
-            
-            <Grid Grid.Row="4" Margin="10,6,10,0">
+            <Grid Grid.Row="5" Margin="10,6,10,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
                     <ColumnDefinition Width="15"/>
@@ -49,12 +48,10 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center">
-                   
                     <controls:PlayButtonControl/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center">
-                    
                     <controls:StopButtonControl/>
                 </StackPanel>
             </Grid>

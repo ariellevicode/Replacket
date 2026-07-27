@@ -28,7 +28,7 @@
 
                     <TextBox x:Name="NumberTextBox"
                              Grid.Column="0"
-                             Text="0"
+                             Text="{Binding DelayTime}"
                              FontSize="13"
                              Padding="8,0"
                              VerticalContentAlignment="Center"

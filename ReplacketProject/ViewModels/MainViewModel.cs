@@ -37,6 +37,14 @@ namespace ReplacketProject.ViewModels
             set { _packetDisplayInfo = value; OnPropertyChanged(); }
         }
 
+        private int _delayTime;
+        public int DelayTime
+        {
+            get => _delayTime;
+            set { _delayTime = value; OnPropertyChanged(); }
+        }
+
+
         private double _progressValue;
         public double ProgressValue
         {
@@ -146,7 +154,6 @@ namespace ReplacketProject.ViewModels
             // if starting fresh from packet 0, initialize UI state
             if (_lastPacketPosition == 0)
             {
-                _displayBuffer.Clear();
                 PacketDisplayInfo = "Calculating total packets...\n";
                 ProgressValue = 0;
             }
@@ -191,9 +198,8 @@ namespace ReplacketProject.ViewModels
                             PacketDisplayInfo = $"Processing stopped at packet {_lastPacketPosition}.\n\n{latestPacketHex}";
                             break;
                         }
-
+                        Task.Delay(DelayTime).Wait();
                         _lastPacketPosition++;
-                        ProgressValue = _lastPacketPosition;
 
                         var rawPacket = capture.GetPacket();
                         var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);

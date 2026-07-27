@@ -139,6 +139,7 @@ namespace ReplacketProject.ViewModels
         public ICommand FileDroppedCommand { get; }
         public ICommand IncrementCommand { get; }
         public ICommand DecrementCommand { get; }
+        public ICommand ResetCommand { get; }
 
         public MainViewModel()
         {
@@ -146,6 +147,7 @@ namespace ReplacketProject.ViewModels
 
             // bind Commands
             StartCommand = new RelayCommand(async () => await ProcessPcapFileAsync(), () => !_isProcessing);
+            ResetCommand = new RelayCommand(ResetPlayback);
             StopCommand = new RelayCommand(StopProcessing, () => _isProcessing);
             BrowseFileCommand = new RelayCommand(BrowseFile);
             FileDroppedCommand = new RelayCommand(OnFileDropped);
@@ -155,7 +157,13 @@ namespace ReplacketProject.ViewModels
             var deviceModel = new NetworkDeviceModel();
             NetworkDevices = new ObservableCollection<string>(deviceModel.GetAvailableNetworkDevices());
         }
-
+        private void ResetPlayback()
+        {
+            _cts?.Cancel();
+            _lastPacketPosition = 0;
+            ProgressValue = 0;
+            ClearDisplay();
+        }
         private void IncrementValue(object parameter)
         {
             if (parameter is string propName)
@@ -166,7 +174,7 @@ namespace ReplacketProject.ViewModels
                 }
                 else if (propName == "Delay")
                 {
-                    DelayTime++;
+                    DelayTime+= 250;
                 }
                 else if (propName == "Speed")
                 {
@@ -221,7 +229,6 @@ namespace ReplacketProject.ViewModels
 
         private void ClearDisplay()
         {
-            _displayBuffer.Clear();
             PacketDisplayInfo = string.Empty;
         }
 

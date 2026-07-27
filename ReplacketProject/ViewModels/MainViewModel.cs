@@ -193,7 +193,7 @@ namespace ReplacketProject.ViewModels
                 }
                 else if (propName == "Delay")
                 {
-                    if (DelayTime > 0) DelayTime--;
+                    if (DelayTime >= 250) DelayTime-= 250;
                 }
                 else if (propName == "Speed")
                 {

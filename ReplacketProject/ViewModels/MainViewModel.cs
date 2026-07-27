@@ -398,14 +398,48 @@ namespace ReplacketProject.ViewModels
 
         private string GetFormattedPacketHex(Packet parsedPacket)
         {
-            byte[] payloadBytes = parsedPacket.PayloadData ?? parsedPacket.Bytes;
+            if (parsedPacket == null) return "[Unparseable Packet]";
+
+            var sb = new StringBuilder();
+
+            // identify packet type 
+            string packetType = "Unknown";
+            Packet currentLayer = parsedPacket;
+            Packet applicationLayer = parsedPacket;
+
+            while (currentLayer != null)
+            {
+                // strip the word "Packet" for a cleaner display 
+                packetType = currentLayer.GetType().Name.Replace("Packet", "");
+                applicationLayer = currentLayer;
+                currentLayer = currentLayer.PayloadPacket;
+            }
+
+            sb.AppendLine($"Type: {packetType}");
+
+            // extract and format the payload
+            byte[] payloadBytes = applicationLayer.PayloadData;
 
             if (payloadBytes != null && payloadBytes.Length > 0)
             {
-                return BitConverter.ToString(payloadBytes);
+                // hex
+                sb.AppendLine($"Payload (Hex): {BitConverter.ToString(payloadBytes)}");
+
+                // decoded text for readability
+                sb.Append("Payload (Text): ");
+                foreach (byte b in payloadBytes)
+                {
+                    // readable ASCII characters, otherwise print a dot for binary data
+                    sb.Append((b >= 32 && b <= 126) ? (char)b : '.');
+                }
+                sb.AppendLine();
+            }
+            else
+            {
+                sb.AppendLine("Payload: [No Application Data]");
             }
 
-            return "[No Payload Data]";
+            return sb.ToString();
         }
 
         public int GetPcapPacketCount()

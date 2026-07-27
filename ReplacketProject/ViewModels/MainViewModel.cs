@@ -112,6 +112,8 @@ namespace ReplacketProject.ViewModels
         public ICommand StopCommand { get; }
         public ICommand BrowseFileCommand { get; }
         public ICommand FileDroppedCommand { get; }
+        public ICommand IncrementCommand { get; }
+        public ICommand DecrementCommand { get; }
 
         public MainViewModel()
         {
@@ -122,12 +124,43 @@ namespace ReplacketProject.ViewModels
             StopCommand = new RelayCommand(StopProcessing, () => _isProcessing);
             BrowseFileCommand = new RelayCommand(BrowseFile);
             FileDroppedCommand = new RelayCommand(OnFileDropped);
+            IncrementCommand = new RelayCommand(IncrementValue);
+            DecrementCommand = new RelayCommand(DecrementValue);
 
             // temp DI violation
             var deviceModel = new NetworkDeviceModel();
             NetworkDevices = new ObservableCollection<string>(deviceModel.GetAvailableNetworkDevices());
 
-            
+
+        }
+        private void IncrementValue(object parameter)
+        {
+            if (parameter is string propName)
+            {
+                if (propName == "Repeat")
+                {
+                    RepeatCount++;
+                }
+                else if (propName == "Delay")
+                {
+                    DelayTime++;
+                }
+            }
+        }
+
+        private void DecrementValue(object parameter)
+        {
+            if (parameter is string propName)
+            {
+                if (propName == "Repeat")
+                {
+                    if (RepeatCount > 1) RepeatCount--;
+                }
+                else if (propName == "Delay")
+                {
+                    if (DelayTime > 0) DelayTime--;
+                }
+            }
         }
 
         private void BrowseFile()

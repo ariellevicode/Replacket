@@ -31,6 +31,7 @@ namespace ReplacketProject.ViewModels
                 _lastPacketPosition = 0;
             }
         }
+
         private ObservableCollection<string> _networkDevices;
         public ObservableCollection<string> NetworkDevices
         {
@@ -66,7 +67,6 @@ namespace ReplacketProject.ViewModels
             set { _repeatCount = value; OnPropertyChanged(); }
         }
 
-
         private double _progressValue;
         public double ProgressValue
         {
@@ -99,13 +99,14 @@ namespace ReplacketProject.ViewModels
                 return Math.Min(100, Math.Round((ProgressValue / ProgressMaximum) * 100));
             }
         }
+
         private double _playbackSpeed = 1.0;
         public double PlaybackSpeed
         {
             get => _playbackSpeed;
             set
             {
-                if (value > 0) 
+                if (value > 0)
                 {
                     _playbackSpeed = value;
                     OnPropertyChanged();
@@ -151,12 +152,10 @@ namespace ReplacketProject.ViewModels
             IncrementCommand = new RelayCommand(IncrementValue);
             DecrementCommand = new RelayCommand(DecrementValue);
 
-            // temp DI violation
             var deviceModel = new NetworkDeviceModel();
             NetworkDevices = new ObservableCollection<string>(deviceModel.GetAvailableNetworkDevices());
-
-
         }
+
         private void IncrementValue(object parameter)
         {
             if (parameter is string propName)
@@ -228,30 +227,13 @@ namespace ReplacketProject.ViewModels
 
         private async Task ProcessPcapFileAsync()
         {
-            if (string.IsNullOrWhiteSpace(FilePath))
-            {
-                PacketDisplayInfo = "Status: No file path provided.";
-                return;
-            }
-
-            if (!File.Exists(FilePath))
-            {
-                PacketDisplayInfo = "Status: File path does not exist.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(SelectedDevice))
-            {
-                PacketDisplayInfo = "Status: Please select a network adapter first.";
-                return;
-            }
+            if (!ValidatePlaybackReady()) return;
 
             _isProcessing = true;
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
 
-            // initialize raw sender service
-            using var rawSender = new ReplacketProject.Models.RawSenderService();
+            using var rawSender = new RawSenderService();
             if (!rawSender.InitializeDevice(SelectedDevice))
             {
                 PacketDisplayInfo = "Status: Could not open the selected network adapter.";
@@ -259,98 +241,154 @@ namespace ReplacketProject.ViewModels
                 return;
             }
 
-            
             if (_lastPacketPosition == 0)
             {
                 PacketDisplayInfo = "calculating total packets...\n";
                 ProgressValue = 0;
             }
 
-            await Task.Run(() =>
+            await Task.Run(() => ExecutePlaybackSession(rawSender, token));
+
+            _isProcessing = false;
+        }
+
+        private bool ValidatePlaybackReady()
+        {
+            if (string.IsNullOrWhiteSpace(FilePath))
             {
-                for (int i = 0; i < RepeatCount; i++)
+                PacketDisplayInfo = "Status: No file path provided.";
+                return false;
+            }
+
+            if (!File.Exists(FilePath))
+            {
+                PacketDisplayInfo = "Status: File path does not exist.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(SelectedDevice))
+            {
+                PacketDisplayInfo = "Status: Please select a network adapter first.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ExecutePlaybackSession(RawSenderService rawSender, CancellationToken token)
+        {
+            for (int i = 0; i < RepeatCount; i++)
+            {
+                try
                 {
-                    try
+                    if (_lastPacketPosition == 0)
                     {
-                        if (_lastPacketPosition == 0)
+                        int totalPackets = GetPcapPacketCount();
+                        if (totalPackets == 0)
                         {
-                            int totalPackets = GetPcapPacketCount();
-                            if (totalPackets == 0)
-                            {
-                                PacketDisplayInfo = "Status: File contains no packets.";
-                                return;
-                            }
-                            ProgressMaximum = totalPackets;
+                            PacketDisplayInfo = "Status: File contains no packets.";
+                            return;
                         }
-
-                        using var device = new CaptureFileReaderDevice(FilePath);
-                        device.Open();
-
-                        // skip already processed packets
-                        int skippedCount = 0;
-                        while (skippedCount < _lastPacketPosition && device.GetNextPacket(out _) == GetPacketStatus.PacketRead)
-                        {
-                            skippedCount++;
-                        }
-
-                        Stopwatch uiTimer = Stopwatch.StartNew();
-                        string latestPacketHex = string.Empty;
-
-                        while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
-                        {
-                            if (token.IsCancellationRequested)
-                            {
-                                PacketDisplayInfo = $"Processing stopped at packet {_lastPacketPosition}.\n\n{latestPacketHex}";
-                                break;
-                            }
-
-                            if (DelayTime > 0)
-                            {
-                                Task.Delay(DelayTime).Wait();
-                            }
-
-                            _lastPacketPosition++;
-
-                            var rawPacket = capture.GetPacket();
-
-                            // inject raw packet to NIC via SharpPcap
-                            rawSender.SendRawPacket(rawPacket.Data);
-
-                            // parse packet solely for UI formatting
-                            var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
-                            latestPacketHex = GetFormattedPacketHex(parsedPacket);
-
-                            
-                            if (uiTimer.ElapsedMilliseconds >= 100)
-                            {
-                                ProgressValue = _lastPacketPosition;
-                                PacketDisplayInfo = $"Packet {_lastPacketPosition}:\n{latestPacketHex}";
-                                uiTimer.Restart();
-                            }
-                        }
-
-                        if (token.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
-                        PacketDisplayInfo = $"Finished processing file (Repeat {i + 1} of {RepeatCount}).\nTotal Packets: {_lastPacketPosition}";
-                        _lastPacketPosition = 0; // reset position for next repeat run
-                        ProgressValue = _lastPacketPosition;
+                        ProgressMaximum = totalPackets;
                     }
-                    catch (TaskCanceledException)
+
+                    using var device = new CaptureFileReaderDevice(FilePath);
+                    device.Open();
+
+                    // skip already processed packets if resumed
+                    int skippedCount = 0;
+                    while (skippedCount < _lastPacketPosition && device.GetNextPacket(out _) == GetPacketStatus.PacketRead)
                     {
-                        break;
+                        skippedCount++;
                     }
-                    catch (Exception ex)
+
+                    PlaySinglePcapPass(device, rawSender, token);
+
+                    if (token.IsCancellationRequested) break;
+
+                    PacketDisplayInfo = $"Finished processing file (Repeat {i + 1} of {RepeatCount}).\nTotal Packets: {_lastPacketPosition}";
+                    _lastPacketPosition = 0; // reset position for next repeat run
+                    ProgressValue = _lastPacketPosition;
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    PacketDisplayInfo = $"Error: {ex.Message}";
+                    break;
+                }
+            }
+        }
+
+        private void PlaySinglePcapPass(CaptureFileReaderDevice device, RawSenderService rawSender, CancellationToken token)
+        {
+            DateTime? lastOriginalTimestamp = null;
+            Stopwatch uiTimer = Stopwatch.StartNew();
+            string latestPacketHex = string.Empty;
+
+            while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
+            {
+                if (token.IsCancellationRequested)
+                {
+                    PacketDisplayInfo = $"Processing stopped at packet {_lastPacketPosition}.\n\n{latestPacketHex}";
+                    break;
+                }
+
+                var rawPacket = capture.GetPacket();
+                DateTime currentOriginalTimestamp = rawPacket.Timeval.Date;
+
+                // calculate timing gap if this is NOT the first packet in the stream
+                if (lastOriginalTimestamp.HasValue)
+                {
+                    TimeSpan originalGap = currentOriginalTimestamp - lastOriginalTimestamp.Value;
+
+                    double finalWaitMilliseconds = IsFixedDelay
+                        ? DelayTime
+                        : (originalGap.TotalMilliseconds / PlaybackSpeed) + DelayTime;
+
+                    if (finalWaitMilliseconds > 0)
                     {
-                        PacketDisplayInfo = $"Error: {ex.Message}";
-                        break;
+                        HighPrecisionDelay(TimeSpan.FromMilliseconds(finalWaitMilliseconds));
                     }
                 }
 
-                _isProcessing = false;
-            });
+                lastOriginalTimestamp = currentOriginalTimestamp;
+                _lastPacketPosition++;
+
+                // inject raw packet to NIC via SharpPcap
+                rawSender.SendRawPacket(rawPacket.Data);
+
+                // parse packet solely for UI formatting
+                var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
+                latestPacketHex = GetFormattedPacketHex(parsedPacket);
+
+                if (uiTimer.ElapsedMilliseconds >= 100)
+                {
+                    ProgressValue = _lastPacketPosition;
+                    PacketDisplayInfo = $"Packet {_lastPacketPosition}:\n{latestPacketHex}";
+                    uiTimer.Restart();
+                }
+            }
+        }
+
+        private void HighPrecisionDelay(TimeSpan delay)
+        {
+            if (delay <= TimeSpan.Zero) return;
+
+            Stopwatch sw = Stopwatch.StartNew();
+            double targetTicks = delay.Ticks;
+
+            if (delay.TotalMilliseconds > 15)
+            {
+                Thread.Sleep((int)(delay.TotalMilliseconds - 10));
+            }
+
+            while (sw.ElapsedTicks < targetTicks)
+            {
+                Thread.SpinWait(10);
+            }
         }
 
         private void StopProcessing()
@@ -369,7 +407,7 @@ namespace ReplacketProject.ViewModels
 
             return "[No Payload Data]";
         }
-        // placeholder method for getting the amount of packets in a pcap file.
+
         public int GetPcapPacketCount()
         {
             using var device = new CaptureFileReaderDevice(FilePath);

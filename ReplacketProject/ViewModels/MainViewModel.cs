@@ -3,6 +3,7 @@ using PacketDotNet;
 using SharpPcap;
 using SharpPcap.LibPcap;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -142,7 +143,7 @@ namespace ReplacketProject.ViewModels
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
 
-            // only wipe the screen and recalculate total if starting from the beginning
+            // if starting fresh from packet 0, initialize UI state
             if (_lastPacketPosition == 0)
             {
                 _displayBuffer.Clear();
@@ -152,6 +153,7 @@ namespace ReplacketProject.ViewModels
 
             await Task.Run(() =>
             {
+                
                 try
                 {
                     // calculate max packets if starting from 0
@@ -176,13 +178,17 @@ namespace ReplacketProject.ViewModels
                         skippedCount++;
                     }
 
-                    // continue processing from where stopped
+                    // start timer
+                    Stopwatch uiTimer = Stopwatch.StartNew();
+                    string latestPacketHex = string.Empty;
+
+                    // process packets
                     while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
                     {
                         // check if the user pressed stop
                         if (token.IsCancellationRequested)
                         {
-                            _displayBuffer.AppendLine($"\nProcessing stopped at packet {_lastPacketPosition}.");
+                            PacketDisplayInfo = $"Processing stopped at packet {_lastPacketPosition}.\n\n{latestPacketHex}";
                             break;
                         }
 
@@ -192,26 +198,35 @@ namespace ReplacketProject.ViewModels
                         var rawPacket = capture.GetPacket();
                         var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
 
-                        FormatAndDisplayPacket(parsedPacket);
+                        // overwrite the local string with ONLY the newest packet's hex data
+                        latestPacketHex = GetFormattedPacketHex(parsedPacket);
 
                         // wip pass to network sending function
                         // SendPacket(rawPacket); 
 
-                        Task.Delay(1).Wait();
+                        // ui updates every 100 ms
+                        if (uiTimer.ElapsedMilliseconds >= 100)
+                        {
+                            // update the UI with the latest packet data
+                            ProgressValue = _lastPacketPosition;
+                            PacketDisplayInfo = $"Packet {_lastPacketPosition}:\n{latestPacketHex}";
+                            uiTimer.Restart();
+                        }
                     }
 
+                   
                     if (!token.IsCancellationRequested)
                     {
-                        _displayBuffer.AppendLine("\nFinished processing file.");
-                        _lastPacketPosition = 0; // reset position so pressing play restarts from packet 1
+                        PacketDisplayInfo = $"Finished processing file.\nTotal Packets: {_lastPacketPosition}";
+                        _lastPacketPosition = 0; // reset position so pressing play again restarts from beginning
                     }
 
-                    PacketDisplayInfo = _displayBuffer.ToString();
+                    // ensure the final progress makes it to the UI
+                    ProgressValue = _lastPacketPosition;
                 }
                 catch (Exception ex)
                 {
-                    _displayBuffer.AppendLine($"\nError: {ex.Message}");
-                    PacketDisplayInfo = _displayBuffer.ToString();
+                    PacketDisplayInfo = $"Error: {ex.Message}";
                 }
                 finally
                 {
@@ -225,15 +240,16 @@ namespace ReplacketProject.ViewModels
             _cts?.Cancel();
         }
 
-        private void FormatAndDisplayPacket(Packet parsedPacket)
+        private string GetFormattedPacketHex(Packet parsedPacket)
         {
             byte[] payloadBytes = parsedPacket.PayloadData ?? parsedPacket.Bytes;
+
             if (payloadBytes != null && payloadBytes.Length > 0)
             {
-                string rawHexPayload = BitConverter.ToString(payloadBytes);
-                _displayBuffer.AppendLine(rawHexPayload);
-                PacketDisplayInfo = _displayBuffer.ToString();
+                return BitConverter.ToString(payloadBytes);
             }
+
+            return "[No Payload Data]";
         }
         // placeholder method for getting the amount of packets in a pcap file.
         public int GetPcapPacketCount()

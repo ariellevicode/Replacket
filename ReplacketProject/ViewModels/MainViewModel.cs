@@ -37,11 +37,18 @@ namespace ReplacketProject.ViewModels
             set { _packetDisplayInfo = value; OnPropertyChanged(); }
         }
 
-        private int _delayTime;
+        private int _delayTime = 0;
         public int DelayTime
         {
             get => _delayTime;
             set { _delayTime = value; OnPropertyChanged(); }
+        }
+
+        private int _repeatCount = 1;
+        public int RepeatCount
+        {
+            get => _repeatCount;
+            set { _repeatCount = value; OnPropertyChanged(); }
         }
 
 
@@ -154,90 +161,103 @@ namespace ReplacketProject.ViewModels
             // if starting fresh from packet 0, initialize UI state
             if (_lastPacketPosition == 0)
             {
-                PacketDisplayInfo = "Calculating total packets...\n";
+                PacketDisplayInfo = "calculating total packets...\n";
                 ProgressValue = 0;
             }
 
-            await Task.Run(() =>
+           
+            await Task.Run( () =>
             {
-                
-                try
+                for (int i = 0; i < RepeatCount; i++)
                 {
-                    // calculate max packets if starting from 0
-                    if (_lastPacketPosition == 0)
+                    try
                     {
-                        int totalPackets = GetPcapPacketCount();
-                        if (totalPackets == 0)
+                        // calculate max packets if starting from 0
+                        if (_lastPacketPosition == 0)
                         {
-                            PacketDisplayInfo = "Status: File contains no packets.";
-                            return;
+                            int totalPackets = GetPcapPacketCount();
+                            if (totalPackets == 0)
+                            {
+                                PacketDisplayInfo = "Status: File contains no packets.";
+                                return;
+                            }
+                            ProgressMaximum = totalPackets;
                         }
-                        ProgressMaximum = totalPackets;
-                    }
 
-                    using var device = new CaptureFileReaderDevice(FilePath);
-                    device.Open();
+                        using var device = new CaptureFileReaderDevice(FilePath);
+                        device.Open();
 
-                    // skip already processed packets
-                    int skippedCount = 0;
-                    while (skippedCount < _lastPacketPosition && device.GetNextPacket(out _) == GetPacketStatus.PacketRead)
-                    {
-                        skippedCount++;
-                    }
+                        // skip already processed packets
+                        int skippedCount = 0;
+                        while (skippedCount < _lastPacketPosition && device.GetNextPacket(out _) == GetPacketStatus.PacketRead)
+                        {
+                            skippedCount++;
+                        }
 
-                    // start timer
-                    Stopwatch uiTimer = Stopwatch.StartNew();
-                    string latestPacketHex = string.Empty;
+                        // start timer
+                        Stopwatch uiTimer = Stopwatch.StartNew();
+                        string latestPacketHex = string.Empty;
 
-                    // process packets
-                    while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
-                    {
-                        // check if the user pressed stop
+                        // process packets
+                        while (device.GetNextPacket(out PacketCapture capture) == GetPacketStatus.PacketRead)
+                        {
+                            // check if the user pressed stop
+                            if (token.IsCancellationRequested)
+                            {
+                                PacketDisplayInfo = $"Processing stopped at packet {_lastPacketPosition}.\n\n{latestPacketHex}";
+                                break;
+                            }
+                        Task.Delay(DelayTime).Wait();
+                            _lastPacketPosition++;
+
+                            var rawPacket = capture.GetPacket();
+                            var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
+
+                            // overwrite the local string with ONLY the newest packet's hex data
+                            latestPacketHex = GetFormattedPacketHex(parsedPacket);
+
+                            // wip pass to network sending function
+                            // SendPacket(rawPacket); 
+
+                            // ui updates every 100 ms
+                            if (uiTimer.ElapsedMilliseconds >= 100)
+                            {
+                                // update the UI with the latest packet data
+                                ProgressValue = _lastPacketPosition;
+                                PacketDisplayInfo = $"Packet {_lastPacketPosition}:\n{latestPacketHex}";
+                                uiTimer.Restart();
+                            }
+                        }
+
+                        // break  out of the loop if stop was pressed
                         if (token.IsCancellationRequested)
                         {
-                            PacketDisplayInfo = $"Processing stopped at packet {_lastPacketPosition}.\n\n{latestPacketHex}";
                             break;
                         }
-                        Task.Delay(DelayTime).Wait();
-                        _lastPacketPosition++;
 
-                        var rawPacket = capture.GetPacket();
-                        var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
-
-                        // overwrite the local string with ONLY the newest packet's hex data
-                        latestPacketHex = GetFormattedPacketHex(parsedPacket);
-
-                        // wip pass to network sending function
-                        // SendPacket(rawPacket); 
-
-                        // ui updates every 100 ms
-                        if (uiTimer.ElapsedMilliseconds >= 100)
+                        if (!token.IsCancellationRequested)
                         {
-                            // update the UI with the latest packet data
-                            ProgressValue = _lastPacketPosition;
-                            PacketDisplayInfo = $"Packet {_lastPacketPosition}:\n{latestPacketHex}";
-                            uiTimer.Restart();
+                            PacketDisplayInfo = $"Finished processing file (Repeat {i + 1} of {RepeatCount}).\nTotal Packets: {_lastPacketPosition}";
+                            _lastPacketPosition = 0; // reset position so the next loop repetition restarts from beginning
                         }
-                    }
 
-                   
-                    if (!token.IsCancellationRequested)
+                        // ensure the final progress makes it to the UI
+                        ProgressValue = _lastPacketPosition;
+                    }
+                    catch (TaskCanceledException)
                     {
-                        PacketDisplayInfo = $"Finished processing file.\nTotal Packets: {_lastPacketPosition}";
-                        _lastPacketPosition = 0; // reset position so pressing play again restarts from beginning
+                        
+                        break;
                     }
+                    catch (Exception ex)
+                    {
+                        PacketDisplayInfo = $"Error: {ex.Message}";
+                        break;
+                    }
+                }
 
-                    // ensure the final progress makes it to the UI
-                    ProgressValue = _lastPacketPosition;
-                }
-                catch (Exception ex)
-                {
-                    PacketDisplayInfo = $"Error: {ex.Message}";
-                }
-                finally
-                {
-                    _isProcessing = false;
-                }
+                // block equivalent for the Task.Run action
+                _isProcessing = false;
             });
         }
 

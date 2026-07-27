@@ -28,7 +28,7 @@
 
                     <TextBox x:Name="NumberTextBox"
                              Grid.Column="0"
-                             Text="{Binding RepeatCount}"
+                             Text="{Binding RepeatCount , UpdateSourceTrigger=PropertyChanged}"
                              FontSize="13"
                              Padding="8,0"
                              VerticalContentAlignment="Center"

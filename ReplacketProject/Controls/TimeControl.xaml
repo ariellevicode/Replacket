@@ -9,7 +9,7 @@
                          Background="{DynamicResource MaterialDesignPaper}">
 
         <StackPanel>
-            <TextBlock Text="time (in seconds):" 
+            <TextBlock Text="time (in milliseconds):" 
                        FontSize="12" 
                        FontWeight="SemiBold" 
                        Margin="0,0,0,4" 

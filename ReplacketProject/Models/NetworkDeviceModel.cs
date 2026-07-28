@@ -12,10 +12,10 @@ namespace ReplacketProject.Models
     {
         public List<string> GetAvailableNetworkDevices()
         {
-            var displayList = new List<string>();
+            List<string> displayList = new List<string>();
 
-            
-            var devices = CaptureDeviceList.Instance;
+
+            CaptureDeviceList devices = CaptureDeviceList.Instance;
 
             if (devices.Count < 1)
             {
@@ -24,7 +24,7 @@ namespace ReplacketProject.Models
             }
 
             
-            foreach (var device in devices)
+            foreach (ICaptureDevice device in devices)
             {
 
                 displayList.Add(device.Description);

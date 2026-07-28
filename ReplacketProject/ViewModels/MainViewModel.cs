@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using PacketDotNet;
 using ReplacketProject.Models;
+using ReplacketProject.Models.Commands;
 using SharpPcap;
 using SharpPcap.LibPcap;
 using System;
@@ -19,9 +20,9 @@ namespace ReplacketProject.ViewModels
     {
         
         // execution is currently active
-        private bool _isProcessing;
-        private int _lastPacketPosition = 0; // Tracks the last processed packet count across runs
-        private CancellationTokenSource _cts;
+        
+        public int _lastPacketPosition = 0; // Tracks the last processed packet count across runs
+        public CancellationTokenSource _cts;
 
         // commands
         public ICommand StartCommand { get; }
@@ -36,13 +37,13 @@ namespace ReplacketProject.ViewModels
         {
             
             // bind Commands
-            StartCommand = new RelayCommand(async () => await ProcessPcapFileAsync(), () => !_isProcessing);
-            ResetCommand = new RelayCommand(ResetPlayback);
-            StopCommand = new RelayCommand(StopProcessing, () => _isProcessing);
-            BrowseFileCommand = new RelayCommand(BrowseFile);
-            FileDroppedCommand = new RelayCommand(OnFileDropped);
-            IncrementCommand = new RelayCommand(IncrementValue);
-            DecrementCommand = new RelayCommand(DecrementValue);
+            StartCommand = new StartCommand(this);
+            ResetCommand = new ResetCommand(this);
+            StopCommand = new StopCommand(this);
+            BrowseFileCommand = new BrowseFileCommand(this);
+            FileDroppedCommand = new FileDroppedCommand(this);
+            IncrementCommand = new IncrementCommand(this);
+            DecrementCommand = new DecrementCommand(this);
 
             NetworkDeviceModel deviceModel = new NetworkDeviceModel();
             NetworkDevices = new ObservableCollection<string>(deviceModel.GetAvailableNetworkDevices());
@@ -117,16 +118,16 @@ namespace ReplacketProject.ViewModels
             }
         }
 
-        private void ClearDisplay()
+        public void ClearDisplay()
         {
             PacketDisplayInfo = string.Empty;
         }
 
-        private async Task ProcessPcapFileAsync()
+        public async Task ProcessPcapFileAsync()
         {
             if (!ValidatePlaybackReady()) return;
 
-            _isProcessing = true;
+            IsProcessing = true;
             _cts = new CancellationTokenSource();
             CancellationToken token = _cts.Token;
 
@@ -134,7 +135,7 @@ namespace ReplacketProject.ViewModels
             if (!rawSender.InitializeDevice(SelectedDevice))
             {
                 PacketDisplayInfo = "Status: Could not open the selected network adapter.";
-                _isProcessing = false;
+                IsProcessing = false;
                 return;
             }
 
@@ -146,7 +147,7 @@ namespace ReplacketProject.ViewModels
 
             await Task.Run(() => ExecutePlaybackSession(rawSender, token));
 
-            _isProcessing = false;
+            IsProcessing = false;
         }
 
         private bool ValidatePlaybackReady()

@@ -23,6 +23,19 @@ namespace ReplacketProject.ViewModels
             }
         }
 
+       
+
+        private bool _isProcessing;
+        public bool IsProcessing
+        {
+            get => _isProcessing;
+            protected set
+            {
+                _isProcessing = value;
+                OnPropertyChanged();
+            }
+        }
+
         private ObservableCollection<string> _networkDevices = new();
         public ObservableCollection<string> NetworkDevices
         {

@@ -15,118 +15,9 @@ using System.Windows.Input;
 
 namespace ReplacketProject.ViewModels
 {
-    public class MainViewModel : BaseViewModel
+    public class MainViewModel : BoundPropertiesViewModel
     {
-        // bound properties
-        private string _filePath;
-        public string FilePath
-        {
-            get => _filePath;
-            set
-            {
-                _filePath = value;
-                OnPropertyChanged();
-                ProgressValue = 0;
-                ProgressMaximum = 100;
-                _lastPacketPosition = 0;
-            }
-        }
-
-        private ObservableCollection<string> _networkDevices;
-        public ObservableCollection<string> NetworkDevices
-        {
-            get => _networkDevices;
-            set { _networkDevices = value; OnPropertyChanged(); }
-        }
-
-        private string _selectedDevice;
-        public string SelectedDevice
-        {
-            get => _selectedDevice;
-            set { _selectedDevice = value; OnPropertyChanged(); }
-        }
-
-        private string _packetDisplayInfo;
-        public string PacketDisplayInfo
-        {
-            get => _packetDisplayInfo;
-            set { _packetDisplayInfo = value; OnPropertyChanged(); }
-        }
-
-        private int _delayTime = 0;
-        public int DelayTime
-        {
-            get => _delayTime;
-            set { _delayTime = value; OnPropertyChanged(); }
-        }
-
-        private int _repeatCount = 1;
-        public int RepeatCount
-        {
-            get => _repeatCount;
-            set { _repeatCount = value; OnPropertyChanged(); }
-        }
-
-        private double _progressValue;
-        public double ProgressValue
-        {
-            get => _progressValue;
-            set
-            {
-                _progressValue = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(ProgressPercentage));
-            }
-        }
-
-        private double _progressMaximum = 100;
-        public double ProgressMaximum
-        {
-            get => _progressMaximum;
-            set
-            {
-                _progressMaximum = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(ProgressPercentage));
-            }
-        }
-
-        public double ProgressPercentage
-        {
-            get
-            {
-                if (ProgressMaximum <= 0) return 0;
-                return Math.Min(100, Math.Round((ProgressValue / ProgressMaximum) * 100));
-            }
-        }
-
-        private double _playbackSpeed = 1.0;
-        public double PlaybackSpeed
-        {
-            get => _playbackSpeed;
-            set
-            {
-                if (value > 0)
-                {
-                    _playbackSpeed = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        private bool _isFixedDelay = false;
-        public bool IsFixedDelay
-        {
-            get => _isFixedDelay;
-            set
-            {
-                _isFixedDelay = value;
-                OnPropertyChanged();
-            }
-        }
-
-        private readonly StringBuilder _displayBuffer;
-
+        
         // execution is currently active
         private bool _isProcessing;
         private int _lastPacketPosition = 0; // Tracks the last processed packet count across runs
@@ -143,8 +34,7 @@ namespace ReplacketProject.ViewModels
 
         public MainViewModel()
         {
-            _displayBuffer = new StringBuilder();
-
+            
             // bind Commands
             StartCommand = new RelayCommand(async () => await ProcessPcapFileAsync(), () => !_isProcessing);
             ResetCommand = new RelayCommand(ResetPlayback);
@@ -154,7 +44,7 @@ namespace ReplacketProject.ViewModels
             IncrementCommand = new RelayCommand(IncrementValue);
             DecrementCommand = new RelayCommand(DecrementValue);
 
-            var deviceModel = new NetworkDeviceModel();
+            NetworkDeviceModel deviceModel = new NetworkDeviceModel();
             NetworkDevices = new ObservableCollection<string>(deviceModel.GetAvailableNetworkDevices());
         }
         private void ResetPlayback()
@@ -174,7 +64,7 @@ namespace ReplacketProject.ViewModels
                 }
                 else if (propName == "Delay")
                 {
-                    DelayTime+= 250;
+                    DelayTime += 250;
                 }
                 else if (propName == "Speed")
                 {
@@ -193,7 +83,7 @@ namespace ReplacketProject.ViewModels
                 }
                 else if (propName == "Delay")
                 {
-                    if (DelayTime >= 250) DelayTime-= 250;
+                    if (DelayTime >= 250) DelayTime -= 250;
                 }
                 else if (propName == "Speed")
                 {
@@ -238,9 +128,9 @@ namespace ReplacketProject.ViewModels
 
             _isProcessing = true;
             _cts = new CancellationTokenSource();
-            var token = _cts.Token;
+            CancellationToken token = _cts.Token;
 
-            using var rawSender = new RawSenderService();
+            using RawSenderService rawSender = new RawSenderService();
             if (!rawSender.InitializeDevice(SelectedDevice))
             {
                 PacketDisplayInfo = "Status: Could not open the selected network adapter.";
@@ -299,7 +189,7 @@ namespace ReplacketProject.ViewModels
                         ProgressMaximum = totalPackets;
                     }
 
-                    using var device = new CaptureFileReaderDevice(FilePath);
+                    using CaptureFileReaderDevice device = new CaptureFileReaderDevice(FilePath);
                     device.Open();
 
                     // skip already processed packets if resumed
@@ -343,7 +233,7 @@ namespace ReplacketProject.ViewModels
                     break;
                 }
 
-                var rawPacket = capture.GetPacket();
+                RawCapture rawPacket = capture.GetPacket();
                 DateTime currentOriginalTimestamp = rawPacket.Timeval.Date;
 
                 // calculate timing gap if this is NOT the first packet in the stream
@@ -368,7 +258,7 @@ namespace ReplacketProject.ViewModels
                 rawSender.SendRawPacket(rawPacket.Data);
 
                 // parse packet solely for UI formatting
-                var parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
+                Packet parsedPacket = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
                 latestPacketHex = GetFormattedPacketHex(parsedPacket);
 
                 if (uiTimer.ElapsedMilliseconds >= 100)
@@ -406,8 +296,8 @@ namespace ReplacketProject.ViewModels
         private string GetFormattedPacketHex(Packet parsedPacket)
         {
             if (parsedPacket == null) return "[Unparseable Packet]";
-
-            var sb = new StringBuilder();
+            // stringbuilder as to dynamically append new information
+            StringBuilder sb = new StringBuilder();
 
             // identify packet type 
             string packetType = "Unknown";
@@ -451,11 +341,12 @@ namespace ReplacketProject.ViewModels
 
         public int GetPcapPacketCount()
         {
-            using var device = new CaptureFileReaderDevice(FilePath);
-            device.Open();
+            using CaptureFileReaderDevice device = new CaptureFileReaderDevice(FilePath);
+            device.Open(); //NOTEEEE
 
             int count = 0;
-            while (device.GetNextPacket(out _) == GetPacketStatus.PacketRead)
+            // discards the actual packet data becuase we are just using GetNextPacket to iterate (hence the "out _")
+            while (device.GetNextPacket(out _) == GetPacketStatus.PacketRead) 
             {
                 count++;
             }

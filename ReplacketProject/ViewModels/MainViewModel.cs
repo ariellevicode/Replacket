@@ -48,76 +48,7 @@ namespace ReplacketProject.ViewModels
             NetworkDeviceModel deviceModel = new NetworkDeviceModel();
             NetworkDevices = new ObservableCollection<string>(deviceModel.GetAvailableNetworkDevices());
         }
-        private void ResetPlayback()
-        {
-            _cts?.Cancel();
-            _lastPacketPosition = 0;
-            ProgressValue = 0;
-            ClearDisplay();
-        }
-        private void IncrementValue(object parameter)
-        {
-            if (parameter is string propName)
-            {
-                if (propName == "Repeat")
-                {
-                    RepeatCount++;
-                }
-                else if (propName == "Delay")
-                {
-                    DelayTime += 250;
-                }
-                else if (propName == "Speed")
-                {
-                    PlaybackSpeed = Math.Round(PlaybackSpeed + 0.25, 2);
-                }
-            }
-        }
-
-        private void DecrementValue(object parameter)
-        {
-            if (parameter is string propName)
-            {
-                if (propName == "Repeat")
-                {
-                    if (RepeatCount > 1) RepeatCount--;
-                }
-                else if (propName == "Delay")
-                {
-                    if (DelayTime >= 250) DelayTime -= 250;
-                }
-                else if (propName == "Speed")
-                {
-                    if (PlaybackSpeed > 0.25) PlaybackSpeed = Math.Round(PlaybackSpeed - 0.25, 2);
-                }
-            }
-        }
-
-        private void BrowseFile()
-        {
-            OpenFileDialog openFileDialog = new OpenFileDialog
-            {
-                Filter = "Pcap Files (*.pcap;*.pcapng)|*.pcap;*.pcapng|All Files (*.*)|*.*",
-                Title = "Select a PCAP File"
-            };
-            if (openFileDialog.ShowDialog() == true)
-            {
-                FilePath = openFileDialog.FileName;
-            }
-        }
-
-        private void OnFileDropped(object parameter)
-        {
-            if (parameter is DragEventArgs e && e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files != null && files.Length > 0)
-                {
-                    FilePath = files[0];
-                }
-            }
-        }
-
+        
         public void ClearDisplay()
         {
             PacketDisplayInfo = string.Empty;

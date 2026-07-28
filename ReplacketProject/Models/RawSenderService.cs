@@ -18,8 +18,8 @@ namespace ReplacketProject.Models
             CaptureDeviceList.Instance.Refresh();
 
             // match by description or name
-            _device = CaptureDeviceList.Instance.FirstOrDefault(d =>
-                d.Description == selectedDeviceDescription || d.Name == selectedDeviceDescription);
+            _device = CaptureDeviceList.Instance.FirstOrDefault(device =>
+                device.Description == selectedDeviceDescription || device.Name == selectedDeviceDescription);
 
             if (_device != null)
             {
